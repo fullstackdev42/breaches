@@ -56,7 +56,14 @@ func (v *ViewCommand) Command() *cobra.Command {
 				return v.dataHandler.FetchDataFromDB(offset, pageSize)
 			}
 
-			ui.RunUI(people, offset, pageSize, nextPage, prevPage, *v.logger)
+			ui.RunUI(people, &ui.Pagination{
+				Offset:   offset,
+				PageSize: pageSize,
+				NextPage: nextPage,
+				PrevPage: prevPage,
+				Logger:   v.logger,
+			})
+
 		},
 	}
 

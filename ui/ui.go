@@ -10,67 +10,79 @@ import (
 	"github.com/rivo/tview"
 )
 
-type UI struct{}
+const (
+	TableIndex  = 0
+	FooterIndex = 1
+)
 
-func NewUI() *UI {
-	return &UI{}
+type Pagination struct {
+	Offset   int
+	PageSize int
+	NextPage func(loggo.LoggerInterface) ([]data.Person, error)
+	PrevPage func(loggo.LoggerInterface) ([]data.Person, error)
+	Logger   loggo.LoggerInterface
 }
 
-func (ui *UI) RunUI(people []data.Person, offset int, pageSize int, nextPage func(loggo.LoggerInterface) ([]data.Person, error), prevPage func(loggo.LoggerInterface) ([]data.Person, error), logger loggo.LoggerInterface) {
-	app := tview.NewApplication()
-	app.EnableMouse(true) // Enable mouse support
+type UI struct {
+	app    *tview.Application
+	page   *tview.Flex
+	table  *tview.Table
+	footer *tview.TextView
+}
 
-	// Create a new page for the data
-	page := tview.NewFlex().SetDirection(tview.FlexRow)
+func NewUI() *UI {
+	return &UI{
+		app:  tview.NewApplication(),
+		page: tview.NewFlex().SetDirection(tview.FlexRow),
+	}
+}
+
+func (ui *UI) RunUI(people []data.Person, pagination *Pagination) {
+	ui.app.EnableMouse(true) // Enable mouse support
 
 	// Add a footer with pagination
-	footer := tview.NewTextView()
+	ui.footer = tview.NewTextView()
 
 	// Render the initial table
-	table := ui.RenderTable(app, people)
-	page.AddItem(table, 0, 1, true)
-	page.AddItem(footer, 1, 1, false)
+	ui.table = ui.RenderTable(people)
+	ui.page.AddItem(ui.table, TableIndex, 1, true)
+	ui.page.AddItem(ui.footer, FooterIndex, 1, false)
 
 	// Add key handlers for 'n' and 'p'
-	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	ui.app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Rune() {
 		case 'n':
-			// Fetch the next page of data
-			people, err := nextPage(logger)
-			if err != nil {
-				fmt.Println("Error fetching data from database:", err)
-				return event
-			}
-			// Update the table and footer
-			page.RemoveItem(table)
-			table = ui.RenderTable(app, people)
-			page.AddItem(table, 0, 1, true)
-			footer.SetText(fmt.Sprintf("Page %d", offset/pageSize+1))
+			ui.updateTable(pagination.NextPage, pagination.Logger, pagination.Offset, pagination.PageSize)
 		case 'p':
-			// Fetch the previous page of data
-			people, err := prevPage(logger)
-			if err != nil {
-				fmt.Println("Error fetching data from database:", err)
-				return event
-			}
-			// Update the table and footer
-			page.RemoveItem(table)
-			table = ui.RenderTable(app, people)
-			page.AddItem(table, 0, 1, true)
-			footer.SetText(fmt.Sprintf("Page %d", offset/pageSize+1))
+			ui.updateTable(pagination.PrevPage, pagination.Logger, pagination.Offset, pagination.PageSize)
 		}
 		return event
 	})
 
-	app.SetRoot(page, true)
+	ui.app.SetRoot(ui.page, true)
 
-	err := app.Run()
+	err := ui.app.Run()
 	if err != nil {
-		fmt.Println("Error running application:", err)
+		pagination.Logger.Error("error running application:", err)
 	}
 }
 
-func (ui *UI) RenderTable(app *tview.Application, people []data.Person) *tview.Table {
+func (ui *UI) updateTable(fetchPage func(loggo.LoggerInterface) ([]data.Person, error), logger loggo.LoggerInterface, offset int, pageSize int) {
+	// Fetch the next page of data
+	people, err := fetchPage(logger)
+	if err != nil {
+		logger.Error("error fetching data from database:", err)
+		return
+	}
+
+	// Update the table and footer
+	ui.page.RemoveItem(ui.table)
+	ui.table = ui.RenderTable(people)
+	ui.page.AddItem(ui.table, TableIndex, 1, true)
+	ui.footer.SetText(fmt.Sprintf("Page %d", offset/pageSize+1))
+}
+
+func (ui *UI) RenderTable(people []data.Person) *tview.Table {
 	t := tview.NewTable()
 
 	// Add headers
