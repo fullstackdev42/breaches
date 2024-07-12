@@ -111,8 +111,8 @@ func (d *DataHandler) CreatePeopleTable(db *sql.DB) error {
 	return nil
 }
 
-func (d *DataHandler) FetchDataFromDB(db *sql.DB) ([]Person, error) {
-	rows, err := db.Query("SELECT * FROM people")
+func (d *DataHandler) FetchDataFromDB(db *sql.DB, offset, limit int) ([]Person, error) {
+	rows, err := db.Query("SELECT * FROM people LIMIT ? OFFSET ?", limit, offset)
 	if err != nil {
 		return nil, err
 	}

@@ -41,42 +41,35 @@ func (v *ViewCommand) RunViewCommand() {
 	}
 	defer db.Close()
 
-	people, err := v.dataHandler.FetchDataFromDB(db)
-	if err != nil {
-		fmt.Println("Error fetching data from database:", err)
-		return
-	}
+	pageSize := 20
+	offset := 0
 
-	v.RenderTable(people)
+	for {
+		people, err := v.dataHandler.FetchDataFromDB(db, offset, pageSize)
+		if err != nil {
+			fmt.Println("Error fetching data from database:", err)
+			return
+		}
+
+		if len(people) == 0 {
+			break
+		}
+
+		v.RenderTable(people)
+
+		offset += pageSize
+	}
 }
 
 func (v *ViewCommand) RenderTable(people []data.Person) {
-	pageSize := 20
-	totalPages := len(people) / pageSize
-	if len(people)%pageSize != 0 {
-		totalPages++
+	t := table.NewWriter()
+	t.SetOutputMirror(os.Stdout)
+	t.AppendHeader(table.Row{"ID1", "ID2", "First Name", "Last Name", "Gender", "Birth Place", "Current Place", "Job", "Date"})
+	t.SetPageSize(20)
+
+	for _, person := range people {
+		t.AppendRow([]interface{}{person.ID1, person.ID2, person.FirstName, person.LastName, person.Gender, person.BirthPlace, person.CurrentPlace, person.Job, person.Date})
 	}
 
-	for i := 0; i < totalPages; i++ {
-		t := table.NewWriter()
-		t.SetOutputMirror(os.Stdout)
-		t.AppendHeader(table.Row{"ID1", "ID2", "First Name", "Last Name", "Gender", "Birth Place", "Current Place", "Job", "Date"})
-
-		start := i * pageSize
-		end := start + pageSize
-		if end > len(people) {
-			end = len(people)
-		}
-
-		for _, person := range people[start:end] {
-			t.AppendRow([]interface{}{person.ID1, person.ID2, person.FirstName, person.LastName, person.Gender, person.BirthPlace, person.CurrentPlace, person.Job, person.Date})
-		}
-
-		fmt.Printf("Page %d of %d\n", i+1, totalPages)
-		t.Render()
-		if i != totalPages-1 {
-			fmt.Print("Press Enter to continue to the next page...")
-			fmt.Scanln()
-		}
-	}
+	t.Render()
 }
