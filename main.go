@@ -28,5 +28,8 @@ func main() {
 
 	rootCmd := cmd.NewRootCmd(dataHandler, &logger)
 
-	rootCmd.Execute()
+	err = rootCmd.Execute()
+	if err != nil {
+		logger.Error("root command execute failed", err)
+	}
 }
