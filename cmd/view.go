@@ -41,8 +41,6 @@ func (v *ViewCommand) RunViewCommand() {
 	app := tview.NewApplication()
 	app.EnableMouse(true) // Enable mouse support
 
-	pages := tview.NewPages()
-
 	// Fetch the initial data
 	people, err := v.dataHandler.FetchDataFromDB(offset, pageSize)
 	if err != nil {
@@ -59,8 +57,6 @@ func (v *ViewCommand) RunViewCommand() {
 	// Add a footer with pagination
 	footer := tview.NewTextView().SetText(fmt.Sprintf("Page %d", offset/pageSize+1))
 	page.AddItem(footer, 1, 1, false)
-
-	pages.AddPage("main", page, true, true)
 
 	// Handle input
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -81,15 +77,27 @@ func (v *ViewCommand) RunViewCommand() {
 			return event
 		}
 
-		// Update the table and footer
+		// Clear the table and add new data
 		table.Clear()
-		table = v.RenderTable(app, people)
+		for i, person := range people {
+			table.SetCell(i+1, 0, tview.NewTableCell(person.ID1))
+			table.SetCell(i+1, 1, tview.NewTableCell(person.ID2))
+			table.SetCell(i+1, 2, tview.NewTableCell(person.FirstName))
+			table.SetCell(i+1, 3, tview.NewTableCell(person.LastName))
+			table.SetCell(i+1, 4, tview.NewTableCell(person.Gender))
+			table.SetCell(i+1, 5, tview.NewTableCell(person.BirthPlace))
+			table.SetCell(i+1, 6, tview.NewTableCell(person.CurrentPlace))
+			table.SetCell(i+1, 7, tview.NewTableCell(person.Job))
+			table.SetCell(i+1, 8, tview.NewTableCell(person.Date))
+		}
+
+		// Update the footer
 		footer.SetText(fmt.Sprintf("Page %d", offset/pageSize+1))
 
 		return event
 	})
 
-	app.SetRoot(pages, true)
+	app.SetRoot(page, true)
 
 	err = app.Run()
 	if err != nil {
