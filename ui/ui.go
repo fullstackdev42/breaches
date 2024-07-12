@@ -84,13 +84,13 @@ func (ui *UI) RunUI(people []data.Person, pagination *Pagination) error {
 	ui.app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Rune() {
 		case 'n':
-			err := ui.updateTable(pagination.NextPage, pagination.Logger, pagination)
+			err := ui.updateTable(pagination.NextPage, pagination.Logger, pagination, true)
 			if err != nil {
 				pagination.Logger.Error("error fetching next page:", err)
 				// Display error to user?
 			}
 		case 'p':
-			err := ui.updateTable(pagination.PrevPage, pagination.Logger, pagination)
+			err := ui.updateTable(pagination.PrevPage, pagination.Logger, pagination, false)
 			if err != nil {
 				pagination.Logger.Error("error fetching previous page:", err)
 				// Display error to user?
@@ -105,7 +105,7 @@ func (ui *UI) RunUI(people []data.Person, pagination *Pagination) error {
 	return ui.app.Run()
 }
 
-func (ui *UI) updateTable(fetchPage func(loggo.LoggerInterface) ([]data.Person, error), logger loggo.LoggerInterface, pagination *Pagination) error {
+func (ui *UI) updateTable(fetchPage func(loggo.LoggerInterface) ([]data.Person, error), logger loggo.LoggerInterface, pagination *Pagination, isNext bool) error {
 	// Fetch the next/previous page of data
 	people, err := fetchPage(logger)
 	if err != nil {
@@ -113,6 +113,13 @@ func (ui *UI) updateTable(fetchPage func(loggo.LoggerInterface) ([]data.Person, 
 		logger.Error("error fetching page:", err)
 		// Return the error
 		return err
+	}
+
+	// Update the Offset in Pagination
+	if isNext {
+		pagination.Offset += pagination.PageSize
+	} else {
+		pagination.Offset -= pagination.PageSize
 	}
 
 	// Update the table and footer
