@@ -2,35 +2,22 @@ package ui
 
 import (
 	"fmt"
+
 	"fullstackdev42/breaches/data"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
 
-type UI struct {
-	DataHandler *data.DataHandler
+type UI struct{}
+
+func NewUI() *UI {
+	return &UI{}
 }
 
-func NewUI(dataHandler *data.DataHandler) *UI {
-	return &UI{
-		DataHandler: dataHandler,
-	}
-}
-
-func (ui *UI) RunUI() {
-	pageSize := 20
-	offset := 0
-
+func (ui *UI) RunUI(people []data.Person, offset int, pageSize int, nextPage func() ([]data.Person, error), prevPage func() ([]data.Person, error)) {
 	app := tview.NewApplication()
 	app.EnableMouse(true) // Enable mouse support
-
-	// Fetch the initial data
-	people, err := ui.DataHandler.FetchDataFromDB(offset, pageSize)
-	if err != nil {
-		fmt.Println("Error fetching data from database:", err)
-		return
-	}
 
 	table := ui.RenderTable(app, people)
 
@@ -42,48 +29,36 @@ func (ui *UI) RunUI() {
 	footer := tview.NewTextView().SetText(fmt.Sprintf("Page %d", offset/pageSize+1))
 	page.AddItem(footer, 1, 1, false)
 
-	// Handle input
+	// Add key handlers for 'n' and 'p'
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Rune() {
-		case 'n': // Next page
-			offset += pageSize
-		case 'p': // Previous page
-			offset -= pageSize
-			if offset < 0 {
-				offset = 0
+		case 'n':
+			// Fetch the next page of data
+			people, err := nextPage()
+			if err != nil {
+				fmt.Println("Error fetching data from database:", err)
+				return event
 			}
+			// Update the table and footer
+			table = ui.RenderTable(app, people)
+			footer.SetText(fmt.Sprintf("Page %d", offset/pageSize+1))
+		case 'p':
+			// Fetch the previous page of data
+			people, err := prevPage()
+			if err != nil {
+				fmt.Println("Error fetching data from database:", err)
+				return event
+			}
+			// Update the table and footer
+			table = ui.RenderTable(app, people)
+			footer.SetText(fmt.Sprintf("Page %d", offset/pageSize+1))
 		}
-
-		// Fetch the new data
-		people, err := ui.DataHandler.FetchDataFromDB(offset, pageSize)
-		if err != nil {
-			fmt.Println("Error fetching data from database:", err)
-			return event
-		}
-
-		// Clear the table and add new data
-		table.Clear()
-		for i, person := range people {
-			table.SetCell(i+1, 0, tview.NewTableCell(person.ID1))
-			table.SetCell(i+1, 1, tview.NewTableCell(person.ID2))
-			table.SetCell(i+1, 2, tview.NewTableCell(person.FirstName))
-			table.SetCell(i+1, 3, tview.NewTableCell(person.LastName))
-			table.SetCell(i+1, 4, tview.NewTableCell(person.Gender))
-			table.SetCell(i+1, 5, tview.NewTableCell(person.BirthPlace))
-			table.SetCell(i+1, 6, tview.NewTableCell(person.CurrentPlace))
-			table.SetCell(i+1, 7, tview.NewTableCell(person.Job))
-			table.SetCell(i+1, 8, tview.NewTableCell(person.Date))
-		}
-
-		// Update the footer
-		footer.SetText(fmt.Sprintf("Page %d", offset/pageSize+1))
-
 		return event
 	})
 
 	app.SetRoot(page, true)
 
-	err = app.Run()
+	err := app.Run()
 	if err != nil {
 		fmt.Println("Error running application:", err)
 	}
