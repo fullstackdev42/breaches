@@ -110,3 +110,23 @@ func (d *DataHandler) CreatePeopleTable(db *sql.DB) error {
 
 	return nil
 }
+
+func (d *DataHandler) FetchDataFromDB(db *sql.DB) ([]Person, error) {
+	rows, err := db.Query("SELECT * FROM people")
+	if err != nil {
+		return nil, fmt.Errorf("error querying database: %w", err)
+	}
+	defer rows.Close()
+
+	var people []Person
+	for rows.Next() {
+		var person Person
+		err = rows.Scan(&person.ID1, &person.ID2, &person.FirstName, &person.LastName, &person.Gender, &person.BirthPlace, &person.CurrentPlace, &person.Job, &person.Date)
+		if err != nil {
+			return nil, fmt.Errorf("error scanning row: %w", err)
+		}
+		people = append(people, person)
+	}
+
+	return people, nil
+}
