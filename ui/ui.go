@@ -76,7 +76,7 @@ func (ui *UI) RunUI(people []data.Person, pagination *Pagination) error {
 	ui.table = ui.CreateDataTable()
 
 	// Populate the table with data
-	ui.table = ui.RenderTable(ui.table, people)
+	ui.table = ui.PopulateTable(ui.table, people)
 	ui.page.AddItem(ui.table, TableIndex, 1, true)
 	ui.page.AddItem(ui.footer, FooterIndex, 1, false)
 
@@ -86,16 +86,15 @@ func (ui *UI) RunUI(people []data.Person, pagination *Pagination) error {
 		case 'n':
 			err := ui.updateTable(pagination.NextPage, pagination.Logger, pagination, true)
 			if err != nil {
-				pagination.Logger.Error("error fetching next page:", err)
-				// Display error to user?
+				ui.footer.SetText(fmt.Sprintf("Error fetching next page: %v", err))
+				return event
 			}
 		case 'p':
 			err := ui.updateTable(pagination.PrevPage, pagination.Logger, pagination, false)
 			if err != nil {
-				pagination.Logger.Error("error fetching previous page:", err)
-				// Display error to user?
+				ui.footer.SetText(fmt.Sprintf("Error fetching previous page: %v", err))
+				return event
 			}
-			// Add cases for other sorting keys (e.g., 's1' for sorting by first name)
 		}
 		return event
 	})
@@ -145,7 +144,7 @@ func (ui *UI) clearTableRows() {
 }
 
 func (ui *UI) populateTableWithData(people []data.Person) {
-	ui.table = ui.RenderTable(ui.table, people)
+	ui.table = ui.PopulateTable(ui.table, people)
 }
 
 func (ui *UI) updateFooterText(pagination *Pagination) {
@@ -178,7 +177,7 @@ func FormatPersonData(person data.Person) data.Person {
 	return person
 }
 
-func (ui *UI) RenderTable(t *tview.Table, people []data.Person) *tview.Table {
+func (ui *UI) PopulateTable(t *tview.Table, people []data.Person) *tview.Table {
 	// Add data with potential truncation (adjust max length as needed)
 	for i, person := range people {
 		person = FormatPersonData(person)
