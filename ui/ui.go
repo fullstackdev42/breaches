@@ -44,6 +44,23 @@ func NewUI() *UI {
 	}
 }
 
+func (ui *UI) CreateDataTable() *tview.Table {
+	t := tview.NewTable().SetBorders(true)
+
+	// Add headers with alignment
+	t.SetCell(0, 0, tview.NewTableCell("ID1").SetAlign(tview.AlignCenter))
+	t.SetCell(0, 1, tview.NewTableCell("ID2").SetAlign(tview.AlignCenter))
+	t.SetCell(0, 2, tview.NewTableCell("First Name").SetAlign(tview.AlignCenter))
+	t.SetCell(0, 3, tview.NewTableCell("Last Name").SetAlign(tview.AlignCenter))
+	t.SetCell(0, 4, tview.NewTableCell("Gender").SetAlign(tview.AlignCenter))
+	t.SetCell(0, 5, tview.NewTableCell("Birth Place").SetAlign(tview.AlignCenter))
+	t.SetCell(0, 6, tview.NewTableCell("Current Place").SetAlign(tview.AlignCenter))
+	t.SetCell(0, 7, tview.NewTableCell("Job").SetAlign(tview.AlignCenter))
+	t.SetCell(0, 8, tview.NewTableCell("Date").SetAlign(tview.AlignCenter))
+
+	return t
+}
+
 func (ui *UI) RunUI(people []data.Person, pagination *Pagination) error {
 	ui.app.EnableMouse(true) // Enable mouse support
 
@@ -55,8 +72,11 @@ func (ui *UI) RunUI(people []data.Person, pagination *Pagination) error {
 	}
 	ui.footer.SetText(footerText)
 
-	// Render the initial table
-	ui.table = ui.RenderTable(people)
+	// Create the initial table structure
+	ui.table = ui.CreateDataTable()
+
+	// Populate the table with data
+	ui.table = ui.RenderTable(ui.table, people)
 	ui.page.AddItem(ui.table, TableIndex, 1, true)
 	ui.page.AddItem(ui.footer, FooterIndex, 1, false)
 
@@ -89,18 +109,23 @@ func (ui *UI) updateTable(fetchPage func(loggo.LoggerInterface) ([]data.Person, 
 	// Fetch the next/previous page of data
 	people, err := fetchPage(logger)
 	if err != nil {
-		return err // Propagate the error
+		// Log the error
+		logger.Error("error fetching page:", err)
+		// Return the error
+		return err
 	}
 
 	// Update the table and footer
 	ui.page.RemoveItem(ui.table)
-	ui.table = ui.RenderTable(people)
+	ui.table = ui.RenderTable(ui.table, people)
 	ui.page.AddItem(ui.table, TableIndex, 1, true)
 	footerText := fmt.Sprintf("Page %d", pagination.Offset/pagination.PageSize+1)
 	if pagination.Total > 0 {
 		footerText += fmt.Sprintf(" (Total: %d)", pagination.Total)
 	}
 	ui.footer.SetText(footerText)
+
+	// No error occurred, return nil
 	return nil
 }
 
@@ -112,43 +137,35 @@ func Truncate(s string, length int) string {
 	return s
 }
 
-func (ui *UI) RenderTable(people []data.Person) *tview.Table {
-	t := tview.NewTable().
-		SetBorders(true)
+func FormatPersonData(person data.Person) data.Person {
+	person.ID1 = Truncate(person.ID1, IDLength)
+	person.ID2 = Truncate(person.ID2, IDLength)
+	person.FirstName = Truncate(person.FirstName, NameLength)
+	person.LastName = Truncate(person.LastName, NameLength)
+	person.Gender = Truncate(person.Gender, GenderLength)
+	person.BirthPlace = Truncate(person.BirthPlace, PlaceLength)
+	person.CurrentPlace = Truncate(person.CurrentPlace, PlaceLength)
+	person.Job = Truncate(person.Job, JobLength)
+	person.Date = Truncate(person.Date, DateLength)
 
-	// Add headers with alignment
-	t.SetCell(0, 0, tview.NewTableCell("ID1").SetAlign(tview.AlignCenter))
-	t.SetCell(0, 1, tview.NewTableCell("ID2").SetAlign(tview.AlignCenter))
-	t.SetCell(0, 2, tview.NewTableCell("First Name").SetAlign(tview.AlignCenter))
-	t.SetCell(0, 3, tview.NewTableCell("Last Name").SetAlign(tview.AlignCenter))
-	t.SetCell(0, 4, tview.NewTableCell("Gender").SetAlign(tview.AlignCenter))
-	t.SetCell(0, 5, tview.NewTableCell("Birth Place").SetAlign(tview.AlignCenter))
-	t.SetCell(0, 6, tview.NewTableCell("Current Place").SetAlign(tview.AlignCenter))
-	t.SetCell(0, 7, tview.NewTableCell("Job").SetAlign(tview.AlignCenter))
-	t.SetCell(0, 8, tview.NewTableCell("Date").SetAlign(tview.AlignCenter))
+	return person
+}
 
+func (ui *UI) RenderTable(t *tview.Table, people []data.Person) *tview.Table {
 	// Add data with potential truncation (adjust max length as needed)
 	for i, person := range people {
-		truncatedID1 := Truncate(person.ID1, IDLength)
-		truncatedID2 := Truncate(person.ID2, IDLength)
-		truncatedFirstName := Truncate(person.FirstName, NameLength)
-		truncatedLastName := Truncate(person.LastName, NameLength)
-		truncatedGender := Truncate(person.Gender, GenderLength)
-		truncatedBirthPlace := Truncate(person.BirthPlace, PlaceLength)
-		truncatedCurrentPlace := Truncate(person.CurrentPlace, PlaceLength)
-		truncatedJob := Truncate(person.Job, JobLength)
-		truncatedDate := Truncate(person.Date, DateLength)
+		person = FormatPersonData(person)
 
-		t.SetCell(i+1, 0, tview.NewTableCell(truncatedID1).SetAlign(tview.AlignCenter))
-		t.SetCell(i+1, 1, tview.NewTableCell(truncatedID2).SetAlign(tview.AlignCenter))
-		t.SetCell(i+1, 2, tview.NewTableCell(truncatedFirstName).SetAlign(tview.AlignCenter))
-		t.SetCell(i+1, 3, tview.NewTableCell(truncatedLastName).SetAlign(tview.AlignCenter))
-		t.SetCell(i+1, 4, tview.NewTableCell(truncatedGender).SetAlign(tview.AlignCenter))
-		t.SetCell(i+1, 5, tview.NewTableCell(truncatedBirthPlace).SetAlign(tview.AlignCenter))
-		t.SetCell(i+1, 6, tview.NewTableCell(truncatedCurrentPlace).SetAlign(tview.AlignCenter))
-		t.SetCell(i+1, 7, tview.NewTableCell(truncatedJob).SetAlign(tview.AlignCenter))
-		t.SetCell(i+1, 8, tview.NewTableCell(truncatedDate).SetAlign(tview.AlignCenter))
+		t.SetCell(i+1, 0, tview.NewTableCell(person.ID1).SetAlign(tview.AlignCenter))
+		t.SetCell(i+1, 1, tview.NewTableCell(person.ID2).SetAlign(tview.AlignCenter))
+		t.SetCell(i+1, 2, tview.NewTableCell(person.FirstName).SetAlign(tview.AlignCenter))
+		t.SetCell(i+1, 3, tview.NewTableCell(person.LastName).SetAlign(tview.AlignCenter))
+		t.SetCell(i+1, 4, tview.NewTableCell(person.Gender).SetAlign(tview.AlignCenter))
+		t.SetCell(i+1, 5, tview.NewTableCell(person.BirthPlace).SetAlign(tview.AlignCenter))
+		t.SetCell(i+1, 6, tview.NewTableCell(person.CurrentPlace).SetAlign(tview.AlignCenter))
+		t.SetCell(i+1, 7, tview.NewTableCell(person.Job).SetAlign(tview.AlignCenter))
+		t.SetCell(i+1, 8, tview.NewTableCell(person.Date).SetAlign(tview.AlignCenter))
 	}
 
-	return t // Return the created table
+	return t
 }
