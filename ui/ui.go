@@ -6,6 +6,7 @@ import (
 	"fullstackdev42/breaches/data"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/jonesrussell/loggo"
 	"github.com/rivo/tview"
 )
 
@@ -15,18 +16,19 @@ func NewUI() *UI {
 	return &UI{}
 }
 
-func (ui *UI) RunUI(people []data.Person, offset int, pageSize int, nextPage func() ([]data.Person, error), prevPage func() ([]data.Person, error)) {
+func (ui *UI) RunUI(people []data.Person, offset int, pageSize int, nextPage func(loggo.LoggerInterface) ([]data.Person, error), prevPage func(loggo.LoggerInterface) ([]data.Person, error), logger loggo.LoggerInterface) {
 	app := tview.NewApplication()
 	app.EnableMouse(true) // Enable mouse support
 
-	table := ui.RenderTable(app, people)
-
 	// Create a new page for the data
 	page := tview.NewFlex().SetDirection(tview.FlexRow)
-	page.AddItem(table, 0, 1, true)
 
 	// Add a footer with pagination
-	footer := tview.NewTextView().SetText(fmt.Sprintf("Page %d", offset/pageSize+1))
+	footer := tview.NewTextView()
+
+	// Render the initial table
+	table := ui.RenderTable(app, people)
+	page.AddItem(table, 0, 1, true)
 	page.AddItem(footer, 1, 1, false)
 
 	// Add key handlers for 'n' and 'p'
@@ -34,23 +36,27 @@ func (ui *UI) RunUI(people []data.Person, offset int, pageSize int, nextPage fun
 		switch event.Rune() {
 		case 'n':
 			// Fetch the next page of data
-			people, err := nextPage()
+			people, err := nextPage(logger)
 			if err != nil {
 				fmt.Println("Error fetching data from database:", err)
 				return event
 			}
 			// Update the table and footer
+			page.RemoveItem(table)
 			table = ui.RenderTable(app, people)
+			page.AddItem(table, 0, 1, true)
 			footer.SetText(fmt.Sprintf("Page %d", offset/pageSize+1))
 		case 'p':
 			// Fetch the previous page of data
-			people, err := prevPage()
+			people, err := prevPage(logger)
 			if err != nil {
 				fmt.Println("Error fetching data from database:", err)
 				return event
 			}
 			// Update the table and footer
+			page.RemoveItem(table)
 			table = ui.RenderTable(app, people)
+			page.AddItem(table, 0, 1, true)
 			footer.SetText(fmt.Sprintf("Page %d", offset/pageSize+1))
 		}
 		return event

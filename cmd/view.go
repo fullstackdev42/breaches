@@ -12,11 +12,13 @@ import (
 
 type ViewCommand struct {
 	dataHandler *data.DataHandler
+	logger      *loggo.LoggerInterface
 }
 
 func NewViewCommand(dataHandler *data.DataHandler, logger *loggo.LoggerInterface) *ViewCommand {
 	return &ViewCommand{
 		dataHandler: dataHandler,
+		logger:      logger,
 	}
 }
 
@@ -40,18 +42,21 @@ func (v *ViewCommand) Command() *cobra.Command {
 			}
 
 			// Define the functions to fetch the next and previous pages
-			nextPage := func() ([]data.Person, error) {
+			nextPage := func(logger loggo.LoggerInterface) ([]data.Person, error) {
+				logger.Debug("nextPage called")
 				offset += pageSize
 				return v.dataHandler.FetchDataFromDB(offset, pageSize)
 			}
-			prevPage := func() ([]data.Person, error) {
+			prevPage := func(logger loggo.LoggerInterface) ([]data.Person, error) {
+				logger.Debug("prevPage called")
+
 				if offset > 0 {
 					offset -= pageSize
 				}
 				return v.dataHandler.FetchDataFromDB(offset, pageSize)
 			}
 
-			ui.RunUI(people, offset, pageSize, nextPage, prevPage)
+			ui.RunUI(people, offset, pageSize, nextPage, prevPage, *v.logger)
 		},
 	}
 
