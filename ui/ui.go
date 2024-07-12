@@ -11,8 +11,14 @@ import (
 )
 
 const (
-	TableIndex  = 0
-	FooterIndex = 1
+	TableIndex   = 0
+	FooterIndex  = 1
+	IDLength     = 20
+	NameLength   = 20
+	GenderLength = 10
+	PlaceLength  = 25
+	JobLength    = 20
+	DateLength   = 16
 )
 
 type Pagination struct {
@@ -98,6 +104,14 @@ func (ui *UI) updateTable(fetchPage func(loggo.LoggerInterface) ([]data.Person, 
 	return nil
 }
 
+// Truncate truncates a string to the specified length.
+func Truncate(s string, length int) string {
+	if len(s) > length {
+		return s[:length]
+	}
+	return s
+}
+
 func (ui *UI) RenderTable(people []data.Person) *tview.Table {
 	t := tview.NewTable().
 		SetBorders(true)
@@ -115,50 +129,15 @@ func (ui *UI) RenderTable(people []data.Person) *tview.Table {
 
 	// Add data with potential truncation (adjust max length as needed)
 	for i, person := range people {
-		truncatedID1 := person.ID1
-		if len(person.ID1) > 20 {
-			truncatedID1 = person.ID1[:20] // Truncate to 20 characters
-		}
-
-		truncatedID2 := person.ID2
-		if len(person.ID2) > 20 {
-			truncatedID2 = person.ID2[:20] // Truncate to 20 characters
-		}
-
-		truncatedFirstName := person.FirstName
-		if len(person.FirstName) > 20 {
-			truncatedFirstName = person.FirstName[:20]
-		}
-
-		truncatedLastName := person.LastName
-		if len(person.LastName) > 20 {
-			truncatedLastName = person.LastName[:20]
-		}
-
-		truncatedGender := person.Gender
-		if len(person.Gender) > 10 {
-			truncatedGender = person.Gender[:10] // Adjust truncation length
-		}
-
-		truncatedBirthPlace := person.BirthPlace
-		if len(person.BirthPlace) > 25 {
-			truncatedBirthPlace = person.BirthPlace[:25]
-		}
-
-		truncatedCurrentPlace := person.CurrentPlace
-		if len(person.CurrentPlace) > 25 {
-			truncatedCurrentPlace = person.CurrentPlace[:25]
-		}
-
-		truncatedJob := person.Job
-		if len(person.Job) > 20 {
-			truncatedJob = person.Job[:20]
-		}
-
-		truncatedDate := person.Date
-		if len(person.Date) > 16 {
-			truncatedDate = person.Date[:16] // Adjust truncation length
-		}
+		truncatedID1 := Truncate(person.ID1, IDLength)
+		truncatedID2 := Truncate(person.ID2, IDLength)
+		truncatedFirstName := Truncate(person.FirstName, NameLength)
+		truncatedLastName := Truncate(person.LastName, NameLength)
+		truncatedGender := Truncate(person.Gender, GenderLength)
+		truncatedBirthPlace := Truncate(person.BirthPlace, PlaceLength)
+		truncatedCurrentPlace := Truncate(person.CurrentPlace, PlaceLength)
+		truncatedJob := Truncate(person.Job, JobLength)
+		truncatedDate := Truncate(person.Date, DateLength)
 
 		t.SetCell(i+1, 0, tview.NewTableCell(truncatedID1).SetAlign(tview.AlignCenter))
 		t.SetCell(i+1, 1, tview.NewTableCell(truncatedID2).SetAlign(tview.AlignCenter))
