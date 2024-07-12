@@ -11,7 +11,15 @@ import (
 )
 
 type Person struct {
-	ID1, ID2, FirstName, LastName, Gender, BirthPlace, CurrentPlace, Job, Date string
+	ID1,
+	ID2,
+	FirstName,
+	LastName,
+	Gender,
+	BirthPlace,
+	CurrentPlace,
+	Job,
+	Date string
 }
 
 type DataHandler struct {

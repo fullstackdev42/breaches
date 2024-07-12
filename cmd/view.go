@@ -9,18 +9,18 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type ViewCmd struct {
+type ViewCommand struct {
 	dataHandler *data.DataHandler
 }
 
-func NewViewCmd(dataHandler *data.DataHandler) *ViewCmd {
-	return &ViewCmd{
+func NewViewCommand(dataHandler *data.DataHandler) *ViewCommand {
+	return &ViewCommand{
 		dataHandler: dataHandler,
 	}
 }
 
-func (v *ViewCmd) viewCmd() *cobra.Command {
-	cmd := &cobra.Command{
+func (v *ViewCommand) Command() *cobra.Command {
+	viewCmd := &cobra.Command{
 		Use:   "view",
 		Short: "View the data in a sortable table",
 		Long: `This command reads the data from the specified file and displays it in a sortable table.
@@ -43,5 +43,5 @@ func (v *ViewCmd) viewCmd() *cobra.Command {
 		},
 	}
 
-	return cmd
+	return viewCmd
 }

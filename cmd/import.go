@@ -8,18 +8,18 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type ImportCmd struct {
+type ImportCommand struct {
 	dataHandler *data.DataHandler
 }
 
-func NewImportCmd(dataHandler *data.DataHandler) *ImportCmd {
-	return &ImportCmd{
+func NewImportCommand(dataHandler *data.DataHandler) *ImportCommand {
+	return &ImportCommand{
 		dataHandler: dataHandler,
 	}
 }
 
-func (i *ImportCmd) importCmd() *cobra.Command {
-	cmd := &cobra.Command{
+func (i *ImportCommand) Command() *cobra.Command {
+	importCmd := &cobra.Command{
 		Use:   "import",
 		Short: "Import the data into an SQLite database",
 		Long: `This command reads the data from the specified file and loads it into an SQLite database.
@@ -48,5 +48,5 @@ func (i *ImportCmd) importCmd() *cobra.Command {
 		},
 	}
 
-	return cmd
+	return importCmd
 }
