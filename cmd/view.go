@@ -23,7 +23,7 @@ func NewViewCommand(dataHandler *data.DataHandler, logger *loggo.LoggerInterface
 }
 
 func (v *ViewCommand) Command() *cobra.Command {
-	ui := ui.NewUI()
+	userInterface := ui.NewUI() // Rename the variable
 
 	viewCmd := &cobra.Command{
 		Use:   "view",
@@ -56,12 +56,12 @@ func (v *ViewCommand) Command() *cobra.Command {
 				return v.dataHandler.FetchDataFromDB(offset, pageSize)
 			}
 
-			ui.RunUI(people, &ui.Pagination{
+			userInterface.RunUI(people, &ui.Pagination{
 				Offset:   offset,
 				PageSize: pageSize,
 				NextPage: nextPage,
 				PrevPage: prevPage,
-				Logger:   v.logger,
+				Logger:   *v.logger,
 			})
 
 		},
