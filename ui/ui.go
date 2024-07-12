@@ -106,16 +106,29 @@ func (ui *UI) RunUI(people []data.Person, pagination *Pagination) error {
 }
 
 func (ui *UI) updateTable(fetchPage func(loggo.LoggerInterface) ([]data.Person, error), logger loggo.LoggerInterface, pagination *Pagination, isNext bool) error {
-	// Fetch the next/previous page of data
-	people, err := fetchPage(logger)
+	people, err := ui.fetchPageData(fetchPage, logger)
 	if err != nil {
-		// Log the error
-		logger.Error("error fetching page:", err)
-		// Return the error
 		return err
 	}
 
-	// Update the Offset in Pagination
+	ui.updatePaginationOffset(pagination, isNext)
+	ui.clearTableRows()
+	ui.populateTableWithData(people)
+	ui.updateFooterText(pagination)
+
+	return nil
+}
+
+func (ui *UI) fetchPageData(fetchPage func(loggo.LoggerInterface) ([]data.Person, error), logger loggo.LoggerInterface) ([]data.Person, error) {
+	people, err := fetchPage(logger)
+	if err != nil {
+		logger.Error("error fetching page:", err)
+		return nil, err
+	}
+	return people, nil
+}
+
+func (ui *UI) updatePaginationOffset(pagination *Pagination, isNext bool) {
 	if isNext {
 		pagination.Offset += pagination.PageSize
 	} else {
@@ -123,24 +136,24 @@ func (ui *UI) updateTable(fetchPage func(loggo.LoggerInterface) ([]data.Person, 
 			pagination.Offset -= pagination.PageSize
 		}
 	}
+}
 
-	// Remove all rows except the header row
+func (ui *UI) clearTableRows() {
 	for i := ui.table.GetRowCount() - 1; i > 0; i-- {
 		ui.table.RemoveRow(i)
 	}
+}
 
-	// Repopulate the table with the new data
+func (ui *UI) populateTableWithData(people []data.Person) {
 	ui.table = ui.RenderTable(ui.table, people)
+}
 
-	// Update the footer
+func (ui *UI) updateFooterText(pagination *Pagination) {
 	footerText := fmt.Sprintf("Page %d", pagination.Offset/pagination.PageSize+1)
 	if pagination.Total > 0 {
 		footerText += fmt.Sprintf(" (Total: %d)", pagination.Total)
 	}
 	ui.footer.SetText(footerText)
-
-	// No error occurred, return nil
-	return nil
 }
 
 // Truncate truncates a string to the specified length.
