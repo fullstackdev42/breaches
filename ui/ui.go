@@ -119,7 +119,9 @@ func (ui *UI) updateTable(fetchPage func(loggo.LoggerInterface) ([]data.Person, 
 	if isNext {
 		pagination.Offset += pagination.PageSize
 	} else {
-		pagination.Offset -= pagination.PageSize
+		if pagination.Offset-pagination.PageSize >= 0 {
+			pagination.Offset -= pagination.PageSize
+		}
 	}
 
 	// Update the table and footer
