@@ -54,7 +54,7 @@ func (v *ViewCommand) RunViewCommand() {
 			break
 		}
 
-		people, err := v.dataHandler.FetchDataFromDB(db, offset, pageSize)
+		people, err := v.dataHandler.FetchDataFromDB(offset, pageSize)
 		if err != nil {
 			fmt.Println("Error fetching data from database:", err)
 			return

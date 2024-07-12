@@ -24,10 +24,11 @@ type Person struct {
 
 type DataHandler struct {
 	filename string
+	db       *sql.DB // Add db as a field of the DataHandler struct
 }
 
-func NewDataHandler(filename string) *DataHandler {
-	return &DataHandler{filename: filename}
+func NewDataHandler(filename string, db *sql.DB) *DataHandler { // Pass db as a parameter to the NewDataHandler function
+	return &DataHandler{filename: filename, db: db}
 }
 
 func (d *DataHandler) LoadDataFromFile() ([]Person, error) {
@@ -111,8 +112,8 @@ func (d *DataHandler) CreatePeopleTable(db *sql.DB) error {
 	return nil
 }
 
-func (d *DataHandler) FetchDataFromDB(db *sql.DB, offset, limit int) ([]Person, error) {
-	rows, err := db.Query("SELECT * FROM people LIMIT ? OFFSET ?", limit, offset)
+func (d *DataHandler) FetchDataFromDB(offset, limit int) ([]Person, error) { // Remove db as a parameter from the FetchDataFromDB function
+	rows, err := d.db.Query("SELECT * FROM people LIMIT ? OFFSET ?", limit, offset) // Use d.db instead of db
 	if err != nil {
 		return nil, err
 	}
