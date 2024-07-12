@@ -12,7 +12,6 @@ import (
 
 type ViewCommand struct {
 	dataHandler *data.DataHandler
-	stopped     bool // Add stopped as a field of the ViewCommand struct
 }
 
 func NewViewCommand(dataHandler *data.DataHandler) *ViewCommand {
@@ -36,41 +35,69 @@ func (v *ViewCommand) Command() *cobra.Command {
 }
 
 func (v *ViewCommand) RunViewCommand() {
-	db, err := v.dataHandler.OpenDB("./data/canada.db")
-	if err != nil {
-		fmt.Println("Error opening database:", err)
-		return
-	}
-	defer db.Close()
-
 	pageSize := 20
 	offset := 0
 
 	app := tview.NewApplication()
+	app.EnableMouse(true) // Enable mouse support
 
-	for {
-		// If the application has been stopped, break the loop
-		if v.stopped {
-			break
+	pages := tview.NewPages()
+
+	// Fetch the initial data
+	people, err := v.dataHandler.FetchDataFromDB(offset, pageSize)
+	if err != nil {
+		fmt.Println("Error fetching data from database:", err)
+		return
+	}
+
+	table := v.RenderTable(app, people)
+
+	// Create a new page for the data
+	page := tview.NewFlex().SetDirection(tview.FlexRow)
+	page.AddItem(table, 0, 1, true)
+
+	// Add a footer with pagination
+	footer := tview.NewTextView().SetText(fmt.Sprintf("Page %d", offset/pageSize+1))
+	page.AddItem(footer, 1, 1, false)
+
+	pages.AddPage("main", page, true, true)
+
+	// Handle input
+	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Rune() {
+		case 'n': // Next page
+			offset += pageSize
+		case 'p': // Previous page
+			offset -= pageSize
+			if offset < 0 {
+				offset = 0
+			}
 		}
 
+		// Fetch the new data
 		people, err := v.dataHandler.FetchDataFromDB(offset, pageSize)
 		if err != nil {
 			fmt.Println("Error fetching data from database:", err)
-			return
+			return event
 		}
 
-		if len(people) == 0 {
-			break
-		}
+		// Update the table and footer
+		table.Clear()
+		table = v.RenderTable(app, people)
+		footer.SetText(fmt.Sprintf("Page %d", offset/pageSize+1))
 
-		v.RenderTable(app, people)
+		return event
+	})
 
-		offset += pageSize
+	app.SetRoot(pages, true)
+
+	err = app.Run()
+	if err != nil {
+		fmt.Println("Error running application:", err)
 	}
 }
 
-func (v *ViewCommand) RenderTable(app *tview.Application, people []data.Person) {
+func (v *ViewCommand) RenderTable(app *tview.Application, people []data.Person) *tview.Table {
 	t := tview.NewTable()
 
 	// Add headers
@@ -97,19 +124,5 @@ func (v *ViewCommand) RenderTable(app *tview.Application, people []data.Person) 
 		t.SetCell(i+1, 8, tview.NewTableCell(person.Date))
 	}
 
-	app.SetRoot(t, true)
-
-	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyESC {
-			// Set the stopped flag to true when the application is stopped
-			v.stopped = true
-			app.Stop()
-		}
-		return event
-	})
-
-	err := app.Run()
-	if err != nil {
-		fmt.Println("Error running application:", err)
-	}
+	return t // Return the created table
 }
