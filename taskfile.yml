@@ -1,13 +1,13 @@
 version: "3"
 
 vars:
-  BIN_NAME: gocreate
+  BIN_NAME: gobreaches
 
 tasks:
   build:
     cmds:
-      - go build -v -o bin/${BIN_NAME} main.go
-    desc: Build the ${BIN_NAME} binary
+      - go build -v -o bin/{{.BIN_NAME}} main.go
+    desc: Build the {{.BIN_NAME}} binary
 
   test:
     cmds:
@@ -42,7 +42,7 @@ tasks:
 
   docker-build:
     cmds:
-      - docker build -t jonesrussell/${BIN_NAME} .
+      - docker build -t jonesrussell/{{.BIN_NAME}} .
     desc: Build Docker image
 
   clean:
