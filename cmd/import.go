@@ -1,91 +1,52 @@
 package cmd
 
 import (
-	"bufio"
 	"database/sql"
 	"fmt"
-	"os"
-	"strings"
+	"fullstackdev42/breaches/data"
 
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/spf13/cobra"
 )
 
-type Person struct {
-	ID1, ID2, FirstName, LastName, Gender, BirthPlace, CurrentPlace, Job, Date string
+type ImportCmd struct {
+	dataHandler *data.DataHandler
 }
 
-// importCmd represents the import command
-var importCmd = &cobra.Command{
-	Use:   "import",
-	Short: "Import the data into an SQLite database",
-	Long: `This command reads the data from the specified file and loads it into an SQLite database.
-The data is stored in a table with columns corresponding to the fields of the data.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		db, err := sql.Open("sqlite3", "./canada.db")
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		defer db.Close()
+func NewImportCmd(dataHandler *data.DataHandler) *ImportCmd {
+	return &ImportCmd{
+		dataHandler: dataHandler,
+	}
+}
 
-		sqlStmt := `
-		CREATE TABLE IF NOT EXISTS people (
-			ID1 TEXT,
-			ID2 TEXT,
-			FirstName TEXT,
-			LastName TEXT,
-			Gender TEXT,
-			BirthPlace TEXT,
-			CurrentPlace TEXT,
-			Job TEXT,
-			Date TEXT
-		);
-		`
-		_, err = db.Exec(sqlStmt)
-		if err != nil {
-			fmt.Printf("%q: %s\n", err, sqlStmt)
-			return
-		}
-
-		tx, err := db.Begin()
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		stmt, err := tx.Prepare("INSERT INTO people(ID1, ID2, FirstName, LastName, Gender, BirthPlace, CurrentPlace, Job, Date) values(?, ?, ?, ?, ?, ?, ?, ?, ?)")
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		defer stmt.Close()
-
-		file, err := os.Open("data/Canada.txt")
-		if err != nil {
-			fmt.Println("Error opening file:", err)
-			return
-		}
-		defer file.Close()
-
-		scanner := bufio.NewScanner(file)
-		for scanner.Scan() {
-			line := scanner.Text()
-			parts := strings.Split(line, ":")
-			if len(parts) >= 10 {
-				_, err = stmt.Exec(parts[0], parts[1], parts[2], parts[3], parts[4], parts[5], parts[6], parts[8], parts[9])
-				if err != nil {
-					fmt.Println(err)
-					return
-				}
+func (i *ImportCmd) importCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "import",
+		Short: "Import the data into an SQLite database",
+		Long: `This command reads the data from the specified file and loads it into an SQLite database.
+		The data is stored in a table with columns corresponding to the fields of the data.`,
+		Run: func(cmd *cobra.Command, args []string) {
+			people, err := i.dataHandler.LoadDataFromFile()
+			if err != nil {
+				fmt.Println("Error loading data from file:", err)
+				return
 			}
-		}
 
-		tx.Commit()
+			db, err := sql.Open("sqlite3", "./canada.db")
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+			defer db.Close()
 
-		fmt.Println("Data loaded into SQLite database.")
-	},
-}
+			err = i.dataHandler.LoadDataIntoDB(db, people)
+			if err != nil {
+				fmt.Println("Error loading data into database:", err)
+				return
+			}
 
-func init() {
-	rootCmd.AddCommand(importCmd)
+			fmt.Println("Data loaded into SQLite database.")
+		},
+	}
+
+	return cmd
 }
