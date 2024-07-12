@@ -31,12 +31,18 @@ func (i *ImportCommand) Command() *cobra.Command {
 				return
 			}
 
-			db, err := sql.Open("sqlite3", "./canada.db")
+			db, err := sql.Open("sqlite3", "./data/canada.db")
 			if err != nil {
 				fmt.Println(err)
 				return
 			}
 			defer db.Close()
+
+			err = i.dataHandler.CreatePeopleTable(db)
+			if err != nil {
+				fmt.Println("Error creating table:", err)
+				return
+			}
 
 			err = i.dataHandler.LoadDataIntoDB(db, people)
 			if err != nil {

@@ -70,7 +70,7 @@ func (d *DataHandler) LoadDataIntoDB(db *sql.DB, people []Person) error {
 		return fmt.Errorf("error starting transaction: %w", err)
 	}
 
-	stmt, err := tx.Prepare("INSERT INTO people(ID1, ID2, FirstName, LastName, Gender, BirthPlace, CurrentPlace, Job, Date) values(?, ?, ?, ?, ?, ?, ?, ?, ?)")
+	stmt, err := tx.Prepare("INSERT OR IGNORE INTO people(ID1, ID2, FirstName, LastName, Gender, BirthPlace, CurrentPlace, Job, Date) values(?, ?, ?, ?, ?, ?, ?, ?, ?)")
 	if err != nil {
 		return fmt.Errorf("error preparing statement: %w", err)
 	}
@@ -85,6 +85,27 @@ func (d *DataHandler) LoadDataIntoDB(db *sql.DB, people []Person) error {
 
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("error committing transaction: %w", err)
+	}
+
+	return nil
+}
+
+func (d *DataHandler) CreatePeopleTable(db *sql.DB) error {
+	createTableSQL := `CREATE TABLE IF NOT EXISTS people (
+		"ID1" TEXT PRIMARY KEY,
+		"ID2" TEXT,
+		"FirstName" TEXT,
+		"LastName" TEXT,
+		"Gender" TEXT,
+		"BirthPlace" TEXT,
+		"CurrentPlace" TEXT,
+		"Job" TEXT,
+		"Date" TEXT
+	);`
+
+	_, err := db.Exec(createTableSQL)
+	if err != nil {
+		return fmt.Errorf("error creating table: %w", err)
 	}
 
 	return nil
