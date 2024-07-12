@@ -124,10 +124,15 @@ func (ui *UI) updateTable(fetchPage func(loggo.LoggerInterface) ([]data.Person, 
 		}
 	}
 
-	// Update the table and footer
-	ui.page.RemoveItem(ui.table)
+	// Remove all rows except the header row
+	for i := ui.table.GetRowCount() - 1; i > 0; i-- {
+		ui.table.RemoveRow(i)
+	}
+
+	// Repopulate the table with the new data
 	ui.table = ui.RenderTable(ui.table, people)
-	ui.page.AddItem(ui.table, TableIndex, 1, true)
+
+	// Update the footer
 	footerText := fmt.Sprintf("Page %d", pagination.Offset/pagination.PageSize+1)
 	if pagination.Total > 0 {
 		footerText += fmt.Sprintf(" (Total: %d)", pagination.Total)
