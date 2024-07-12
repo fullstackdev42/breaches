@@ -3,9 +3,8 @@ package cmd
 import (
 	"fmt"
 	"fullstackdev42/breaches/data"
-	"os"
 
-	"github.com/jedib0t/go-pretty/v6/table"
+	"github.com/rivo/tview"
 	"github.com/spf13/cobra"
 )
 
@@ -62,14 +61,23 @@ func (v *ViewCommand) RunViewCommand() {
 }
 
 func (v *ViewCommand) RenderTable(people []data.Person) {
-	t := table.NewWriter()
-	t.SetOutputMirror(os.Stdout)
-	t.AppendHeader(table.Row{"ID1", "ID2", "First Name", "Last Name", "Gender", "Birth Place", "Current Place", "Job", "Date"})
-	t.SetPageSize(20)
+	t := tview.NewTable()
 
-	for _, person := range people {
-		t.AppendRow([]interface{}{person.ID1, person.ID2, person.FirstName, person.LastName, person.Gender, person.BirthPlace, person.CurrentPlace, person.Job, person.Date})
+	for i, person := range people {
+		t.SetCell(i, 0, tview.NewTableCell(person.ID1))
+		t.SetCell(i, 1, tview.NewTableCell(person.ID2))
+		t.SetCell(i, 2, tview.NewTableCell(person.FirstName))
+		t.SetCell(i, 3, tview.NewTableCell(person.LastName))
+		t.SetCell(i, 4, tview.NewTableCell(person.Gender))
+		t.SetCell(i, 5, tview.NewTableCell(person.BirthPlace))
+		t.SetCell(i, 6, tview.NewTableCell(person.CurrentPlace))
+		t.SetCell(i, 7, tview.NewTableCell(person.Job))
+		t.SetCell(i, 8, tview.NewTableCell(person.Date))
 	}
 
-	t.Render()
+	app := tview.NewApplication()
+	err := app.SetRoot(t, true).Run()
+	if err != nil {
+		fmt.Println("Error running application:", err)
+	}
 }
