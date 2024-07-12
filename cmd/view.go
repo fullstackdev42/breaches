@@ -23,7 +23,7 @@ func NewViewCommand(dataHandler *data.DataHandler, logger *loggo.LoggerInterface
 }
 
 func (v *ViewCommand) Command() *cobra.Command {
-	userInterface := ui.NewUI() // Rename the variable
+	userInterface := ui.NewUI()
 
 	viewCmd := &cobra.Command{
 		Use:   "view",
@@ -34,47 +34,55 @@ func (v *ViewCommand) Command() *cobra.Command {
 			pageSize := 20
 			offset := 0
 
-			// Fetch the initial data
-			people, err := v.dataHandler.FetchDataFromDB(offset, pageSize)
-			if err != nil {
-				fmt.Println("Error fetching data from database:", err)
-				return
-			}
-
-			// Get the total number of items
-			total, err := v.dataHandler.GetTotalItems()
-			if err != nil {
-				fmt.Println("Error fetching total number of items:", err)
-				return
-			}
-
-			// Define the functions to fetch the next and previous pages
-			nextPage := func(logger loggo.LoggerInterface) ([]data.Person, error) {
-				logger.Debug("nextPage called")
-				offset += pageSize
-				return v.dataHandler.FetchDataFromDB(offset, pageSize)
-			}
-			prevPage := func(logger loggo.LoggerInterface) ([]data.Person, error) {
-				logger.Debug("prevPage called")
-
-				if offset > 0 {
-					offset -= pageSize
-				}
-				return v.dataHandler.FetchDataFromDB(offset, pageSize)
-			}
-
-			pagination := &ui.Pagination{
-				Offset:   offset,
-				PageSize: pageSize,
-				NextPage: nextPage,
-				PrevPage: prevPage,
-				Logger:   *v.logger,
-				Total:    total, // Set the total number of items
-			}
-
-			userInterface.RunUI(people, pagination)
+			v.runCommand(offset, pageSize, userInterface)
 		},
 	}
 
 	return viewCmd
+}
+
+func (v *ViewCommand) runCommand(offset int, pageSize int, userInterface *ui.UI) {
+	// Fetch the initial data
+	people, err := v.dataHandler.FetchDataFromDB(offset, pageSize)
+	if err != nil {
+		fmt.Println("Error fetching data from database:", err)
+		return
+	}
+
+	// Get the total number of items
+	total, err := v.dataHandler.GetTotalItems()
+	if err != nil {
+		fmt.Println("Error fetching total number of items:", err)
+		return
+	}
+
+	pagination := &ui.Pagination{
+		Offset:   offset,
+		PageSize: pageSize,
+		NextPage: func(logger loggo.LoggerInterface) ([]data.Person, error) {
+			return v.nextPage(logger, offset, pageSize)
+		},
+		PrevPage: func(logger loggo.LoggerInterface) ([]data.Person, error) {
+			return v.prevPage(logger, offset, pageSize)
+		},
+		Logger: *v.logger,
+		Total:  total, // Set the total number of items
+	}
+
+	userInterface.RunUI(people, pagination)
+}
+
+func (v *ViewCommand) nextPage(logger loggo.LoggerInterface, offset int, pageSize int) ([]data.Person, error) {
+	logger.Debug("nextPage called")
+	offset += pageSize
+	return v.dataHandler.FetchDataFromDB(offset, pageSize)
+}
+
+func (v *ViewCommand) prevPage(logger loggo.LoggerInterface, offset int, pageSize int) ([]data.Person, error) {
+	logger.Debug("prevPage called")
+
+	if offset > 0 {
+		offset -= pageSize
+	}
+	return v.dataHandler.FetchDataFromDB(offset, pageSize)
 }
