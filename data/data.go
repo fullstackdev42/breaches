@@ -114,7 +114,7 @@ func (d *DataHandler) CreatePeopleTable(db *sql.DB) error {
 func (d *DataHandler) FetchDataFromDB(db *sql.DB) ([]Person, error) {
 	rows, err := db.Query("SELECT * FROM people")
 	if err != nil {
-		return nil, fmt.Errorf("error querying database: %w", err)
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -123,10 +123,18 @@ func (d *DataHandler) FetchDataFromDB(db *sql.DB) ([]Person, error) {
 		var person Person
 		err = rows.Scan(&person.ID1, &person.ID2, &person.FirstName, &person.LastName, &person.Gender, &person.BirthPlace, &person.CurrentPlace, &person.Job, &person.Date)
 		if err != nil {
-			return nil, fmt.Errorf("error scanning row: %w", err)
+			return nil, err
 		}
 		people = append(people, person)
 	}
 
 	return people, nil
+}
+
+func (d *DataHandler) OpenDB(path string) (*sql.DB, error) {
+	db, err := sql.Open("sqlite3", path)
+	if err != nil {
+		return nil, fmt.Errorf("error opening database: %w", err)
+	}
+	return db, nil
 }

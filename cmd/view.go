@@ -1,13 +1,11 @@
 package cmd
 
 import (
-	"database/sql"
 	"fmt"
 	"fullstackdev42/breaches/data"
 	"os"
 
 	"github.com/jedib0t/go-pretty/v6/table"
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/spf13/cobra"
 )
 
@@ -28,7 +26,7 @@ func (v *ViewCommand) Command() *cobra.Command {
 		Long: `This command reads the data from the specified file and displays it in a sortable table.
 		You can navigate through the table using the next and back buttons.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			db, err := sql.Open("sqlite3", "./people.db")
+			db, err := v.dataHandler.OpenDB("./data/canada.db")
 			if err != nil {
 				fmt.Println("Error opening database:", err)
 				return
