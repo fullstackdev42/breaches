@@ -5,6 +5,8 @@ import (
 
 	"fullstackdev42/breaches/data"
 
+	logger "github.com/jonesrussell/loggo"
+
 	"github.com/spf13/cobra"
 )
 
@@ -14,13 +16,16 @@ var rootCmd = &cobra.Command{
 }
 
 // NewRootCmd now returns *cobra.Command
-func NewRootCmd(dataHandler *data.DataHandler) *cobra.Command {
+func NewRootCmd(
+	dataHandler *data.DataHandler,
+	logger *logger.LoggerInterface,
+) *cobra.Command {
 	// cfg := NewConfig()
 
 	// rootCmd.PersistentFlags().BoolVarP(&cfg.Debug, "debug", "d", false, "Enable debug mode")
 
 	importCommand := NewImportCommand(dataHandler)
-	viewCommand := NewViewCommand(dataHandler)
+	viewCommand := NewViewCommand(dataHandler, logger)
 
 	rootCmd.AddCommand(importCommand.Command())
 	rootCmd.AddCommand(viewCommand.Command())

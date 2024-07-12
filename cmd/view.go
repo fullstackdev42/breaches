@@ -5,6 +5,7 @@ import (
 	"fullstackdev42/breaches/data"
 	"fullstackdev42/breaches/ui"
 
+	"github.com/jonesrussell/loggo"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/spf13/cobra"
 )
@@ -13,7 +14,7 @@ type ViewCommand struct {
 	dataHandler *data.DataHandler
 }
 
-func NewViewCommand(dataHandler *data.DataHandler) *ViewCommand {
+func NewViewCommand(dataHandler *data.DataHandler, logger *loggo.LoggerInterface) *ViewCommand {
 	return &ViewCommand{
 		dataHandler: dataHandler,
 	}

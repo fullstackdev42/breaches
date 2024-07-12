@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"fullstackdev42/breaches/cmd"
 	"fullstackdev42/breaches/data"
+
+	"github.com/jonesrussell/loggo"
 )
 
 func main() {
@@ -15,9 +17,16 @@ func main() {
 	}
 	defer db.Close()
 
+	// Create a new logger instance
+	logger, err := loggo.NewLogger("./loggo.log")
+	if err != nil {
+		fmt.Println("Error creating logger:", err)
+		return
+	}
+
 	dataHandler := data.NewDataHandler("./data/Canada.txt", db)
 
-	rootCmd := cmd.NewRootCmd(dataHandler)
+	rootCmd := cmd.NewRootCmd(dataHandler, &logger)
 
 	rootCmd.Execute()
 }
