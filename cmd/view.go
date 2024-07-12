@@ -41,6 +41,13 @@ func (v *ViewCommand) Command() *cobra.Command {
 				return
 			}
 
+			// Get the total number of items
+			total, err := v.dataHandler.GetTotalItems()
+			if err != nil {
+				fmt.Println("Error fetching total number of items:", err)
+				return
+			}
+
 			// Define the functions to fetch the next and previous pages
 			nextPage := func(logger loggo.LoggerInterface) ([]data.Person, error) {
 				logger.Debug("nextPage called")
@@ -56,14 +63,16 @@ func (v *ViewCommand) Command() *cobra.Command {
 				return v.dataHandler.FetchDataFromDB(offset, pageSize)
 			}
 
-			userInterface.RunUI(people, &ui.Pagination{
+			pagination := &ui.Pagination{
 				Offset:   offset,
 				PageSize: pageSize,
 				NextPage: nextPage,
 				PrevPage: prevPage,
 				Logger:   *v.logger,
-			})
+				Total:    total, // Set the total number of items
+			}
 
+			userInterface.RunUI(people, pagination)
 		},
 	}
 

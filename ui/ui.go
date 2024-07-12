@@ -66,11 +66,7 @@ func (ui *UI) RunUI(people []data.Person, pagination *Pagination) error {
 
 	// Add a footer with pagination and total items (if available)
 	ui.footer = tview.NewTextView()
-	footerText := fmt.Sprintf("Page %d", pagination.Offset/pagination.PageSize+1)
-	if pagination.Total > 0 {
-		footerText += fmt.Sprintf(" (Total: %d)", pagination.Total)
-	}
-	ui.footer.SetText(footerText)
+	ui.SetupFooter(pagination)
 
 	// Create the initial table structure
 	ui.table = ui.CreateDataTable()
@@ -148,11 +144,7 @@ func (ui *UI) populateTableWithData(people []data.Person) {
 }
 
 func (ui *UI) updateFooterText(pagination *Pagination) {
-	footerText := fmt.Sprintf("Page %d", pagination.Offset/pagination.PageSize+1)
-	if pagination.Total > 0 {
-		footerText += fmt.Sprintf(" (Total: %d)", pagination.Total)
-	}
-	ui.footer.SetText(footerText)
+	ui.SetupFooter(pagination)
 }
 
 // Truncate truncates a string to the specified length.
@@ -194,4 +186,14 @@ func (ui *UI) PopulateTable(t *tview.Table, people []data.Person) *tview.Table {
 	}
 
 	return t
+}
+
+func (ui *UI) SetupFooter(pagination *Pagination) {
+	totalPages := (pagination.Total + pagination.PageSize - 1) / pagination.PageSize
+	currentPage := pagination.Offset/pagination.PageSize + 1
+	footerText := fmt.Sprintf("Page %d/%d", currentPage, totalPages)
+	if pagination.Total > 0 {
+		footerText += fmt.Sprintf(" (Total: %d)", pagination.Total)
+	}
+	ui.footer.SetText(footerText)
 }

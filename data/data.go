@@ -139,3 +139,12 @@ func (d *DataHandler) OpenDB(path string) (*sql.DB, error) {
 	}
 	return db, nil
 }
+
+func (d *DataHandler) GetTotalItems() (int, error) {
+	var total int
+	err := d.db.QueryRow("SELECT COUNT(*) FROM people").Scan(&total)
+	if err != nil {
+		return 0, err
+	}
+	return total, nil
+}
